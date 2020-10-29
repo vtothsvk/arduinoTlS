@@ -18,19 +18,31 @@ mbedtls_pk_context PrivKey;
 
 mbedtls_ecdsa_context ECDSA_Context;
 
-
 unsigned char key[32];
 
-char peers[] = "siz+maj-bit98";
+char peers[] = "aka+fuka-siz98&bit$maj";
 int ret;
 
 extern "C" {
 #include "crypto/base64.h"
 }
 
-const char public_key[] = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9q9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==";
+//const char public_key[] = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9q9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==";
 
-const char private_key[] ="MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2OF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G";
+//const char private_key[] ="MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2OF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G";
+
+const char PUBLIC_KEY[] =
+"-----BEGIN PUBLIC KEY-----\n"
+"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\n"
+"q9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n"
+"-----END PUBLIC KEY-----\n";
+
+const char PRIVATE_KEY[] =
+"-----BEGIN PRIVATE KEY-----\n"
+"MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2\n"
+"OF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r\n"
+"1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G\n"
+"-----END PRIVATE KEY-----\n";
 
 void setup(){
     M5.begin();
@@ -39,10 +51,11 @@ void setup(){
     Serial.begin(115200);
     Serial.println("Siz maj bit");
 
-    mbedtls_entropy_init( &entropy );
+    //mbedtls_entropy_init( &entropy );
 
     mbedtls_ctr_drbg_init( &ctr_drbg );
 
+    /*
     if( ( ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *) peers, strlen( peers ) ) ) != 0 ){
         Serial.print("drbg init ret: ");
         Serial.print(ret);
@@ -50,6 +63,7 @@ void setup(){
             delay(100);
         }
     }
+    */
 
     char header[] = "{\"alg\":\"ES256\",\"typ\":\"JWT\"}";
 
@@ -80,32 +94,42 @@ void setup(){
 
     mbedtls_pk_init(&PrivKey);
 
-    mbedtls_pk_setup(&PrivKey, mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY));
+    //mbedtls_pk_setup(&PrivKey, mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY));
 
+    /*
     mbedtls_ecp_gen_key(MBEDTLS_ECP_DP_SECP256R1, 
                                     mbedtls_pk_ec(PrivKey),
                                     mbedtls_ctr_drbg_random,
                                     &(ctr_drbg));
-    
+    */
+
+
+    mbedtls_pk_parse_key(&PrivKey, (unsigned char*)PRIVATE_KEY, strlen(PRIVATE_KEY) + 1, NULL, 0);
+    mbedtls_pk_parse_public_key(&PrivKey, (unsigned char*)PUBLIC_KEY, strlen(PUBLIC_KEY) + 1);
+
     mbedtls_ecdsa_from_keypair(&ECDSA_Context, mbedtls_pk_ec(PrivKey));
 
-    unsigned char PrivBuf[100];
+    //unsigned char PrivBuf[100];
 
-    mbedtls_pk_write_key_pem(&PrivKey, PrivBuf, 100);
+    //mbedtls_pk_write_key_pem(&PrivKey, PrivBuf, 100);
 
-    unsigned char signature[2 * 32 + 9];// "at least twice as large as the size of the curve used, plus 9"
+    unsigned char signature[MBEDTLS_ECDSA_MAX_LEN];// "at least twice as large as the size of the curve used, plus 9"
     size_t signature_length;
     ret = mbedtls_ecdsa_write_signature(&ECDSA_Context, MBEDTLS_MD_SHA256, shaResult, 32,
                                     signature, &signature_length,
                                     mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret == 0) {
-        char sizmajbituzkurvafix[2 * 32 + 9];
+        char sizmajbituzkurvafix[MBEDTLS_ECDSA_MAX_LEN];
         sprintf(&sizmajbituzkurvafix[0], "%s", signature);
+        Serial.print("Signature raw: ");
+        Serial.println((char*)signature);        
         Serial.print("Signature: ");
         Serial.println(base64::encode(sizmajbituzkurvafix).c_str());
+        Serial.print("slen: ");
+        Serial.print(signature_length);
     } else {
         Serial.print("signing error: ");
-        Serial.print(ret);    
+        Serial.print(ret);
     }
     
     Serial.print("Hash: ");
