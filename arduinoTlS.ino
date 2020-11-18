@@ -1,4 +1,4 @@
-#include <M5Stack.h>
+//#include <M5Stack.h>
 #include <mbedtls/md.h>
 #include <mbedtls/ecdsa.h>
 #include <mbedtls/ecp.h>
@@ -32,21 +32,21 @@ extern "C" {
 //const char private_key[] ="MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2OF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G";
 
 const char PUBLIC_KEY[] =
-"-----BEGIN PUBLIC KEY-----\n"
+"-----BEGIN EC PUBLIC KEY-----\n"
 "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\n"
 "q9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n"
-"-----END PUBLIC KEY-----\n";
+"-----END EC PUBLIC KEY-----\n";
 
 const char PRIVATE_KEY[] =
-"-----BEGIN PRIVATE KEY-----\n"
+"-----BEGIN EC PRIVATE KEY-----\n"
 "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2\n"
 "OF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r\n"
 "1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G\n"
-"-----END PRIVATE KEY-----\n";
+"-----END EC PRIVATE KEY-----\n";
 
 void setup(){
-    M5.begin();
-    M5.Power.begin();
+    //M5.begin();
+    //M5.Power.begin();
 
     Serial.begin(115200);
     Serial.println("Siz maj bit");
@@ -68,7 +68,7 @@ void setup(){
     char header[] = "{\"alg\":\"ES256\",\"typ\":\"JWT\"}";
 
     char payload[] = "{\"sub\":\"aabbccddeeff\",\"Exp\":1516239022,\"iat\":1516230022}";
-    
+
     //char *payload = "Hello SHA 256!";
     byte shaResult[32];
 
@@ -82,9 +82,9 @@ void setup(){
     strcpy(payload64, header64);
     strcat(payload64, ".");
     strcat(payload64, pld64);
-    
+
     const size_t payloadLength = strlen(payload64);         
-    
+
     mbedtls_md_init(&ctx);
     mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(md_type), 0);
     mbedtls_md_starts(&ctx);
@@ -94,7 +94,7 @@ void setup(){
 
     mbedtls_pk_init(&PrivKey);
 
-    //mbedtls_pk_setup(&PrivKey, mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY));
+    mbedtls_pk_setup(&PrivKey, mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY));
 
     /*
     mbedtls_ecp_gen_key(MBEDTLS_ECP_DP_SECP256R1, 
@@ -113,7 +113,7 @@ void setup(){
 
     //mbedtls_pk_write_key_pem(&PrivKey, PrivBuf, 100);
 
-    unsigned char signature[MBEDTLS_ECDSA_MAX_LEN];// "at least twice as large as the size of the curve used, plus 9"
+    unsigned char signature[200];// "at least twice as large as the size of the curve used, plus 9"
     size_t signature_length;
     ret = mbedtls_ecdsa_write_signature(&ECDSA_Context, MBEDTLS_MD_SHA256, shaResult, 32,
                                     signature, &signature_length,
@@ -143,8 +143,6 @@ void setup(){
 
     Serial.println();
     Serial.println(payload64);
-
-
 }
 
 void loop(){
